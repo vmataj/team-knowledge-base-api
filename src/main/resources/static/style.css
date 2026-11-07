@@ -1,0 +1,8 @@
+body { margin: 0; background: #eef3f7; color: #172c43; font: 17px/1.6 system-ui, sans-serif; }
+main { max-width: 740px; margin: 9vh auto; padding: 28px; }
+h1 { margin: 0; font-size: clamp(2rem, 6vw, 3.4rem); letter-spacing: -.045em; }
+.eyebrow { color: #2c6070; font-size: .8rem; font-weight: 700; letter-spacing: .13em; }
+article { background: white; border: 1px solid #c8d9e4; border-radius: 16px; padding: 20px 26px; }
+button, select { padding: 9px 12px; font: inherit; border-radius: 8px; margin: 4px; }
+button { background: #1e5067; color: white; border: 1px solid #1e5067; cursor: pointer; }
+#status { font-family: monospace; color: #24576a; }
