@@ -14,9 +14,13 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/workspaces/{workspace}/runbooks")
 class RunbookController {
     private final RunbookRepository repository;
+    private final MembershipRepository memberships;
+    private final WorkspaceRepository workspaces;
 
-    RunbookController(RunbookRepository repository) {
+    RunbookController(RunbookRepository repository, MembershipRepository memberships, WorkspaceRepository workspaces) {
         this.repository = repository;
+        this.memberships = memberships;
+        this.workspaces = workspaces;
     }
 
     @GetMapping
@@ -50,21 +54,26 @@ class RunbookController {
         return RunbookView.from(runbook);
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    void delete(@PathVariable String workspace, @PathVariable long id, Authentication user) {
+        authorize(workspace, user, true);
+        repository.delete(find(workspace, id));
+    }
+
     private Runbook find(String workspace, long id) {
         return repository.findByIdAndWorkspace(id, workspace)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     private void authorize(String workspace, Authentication user, boolean write) {
-        String prefix = switch (workspace) {
-            case "support" -> "SUPPORT";
-            case "billing" -> "BILLING";
-            default -> throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        };
-        boolean permitted = user.getAuthorities().stream().anyMatch(authority ->
-            authority.getAuthority().equals(prefix + "_EDIT")
-                || (!write && authority.getAuthority().equals(prefix + "_VIEW")));
-        if (!permitted) {
+        if (!workspaces.existsById(workspace)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var membership = memberships.findByWorkspaceAndUsername(workspace, user.getName())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+        if (write && membership.role == WorkspaceMembership.Role.VIEWER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }

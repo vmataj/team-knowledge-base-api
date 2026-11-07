@@ -1,13 +1,32 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Team Knowledge Base</title><link rel="stylesheet" href="/style.css"></head>
 <body><main>
-<p class="eyebrow">SUPPORT WORKSPACE</p><h1>Team Knowledge Base</h1>
-<p>Browse the support runbook and see how access changes by role.</p>
-<label for="role">Demo account</label>
-<select id="role"><option>viewer</option><option>editor</option><option>outsider</option></select>
-<button id="read">Read runbook</button> <button id="write">Try an edit</button>
-<p id="status" role="status">Choose an action to call the API.</p>
-<article><h2 id="title">Support runbook</h2><p id="body"></p></article>
+<p class="eyebrow">TEAM OPERATIONS</p><h1>Team Knowledge Base</h1>
+<p>Find and maintain runbooks for your workspace.</p>
+<label>Demo account <select id="role"><option value="editor">editor</option><option value="viewer">viewer</option><option value="outsider">outsider</option></select></label>
+<label>Workspace <select id="workspace"></select></label>
+<form id="workspace-form">
+<label>New workspace <input name="slug" required maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="e.g. platform-support"></label>
+<button>Create workspace</button>
+</form>
+<p id="status" role="status"></p>
+<section aria-label="Runbooks"><h2>Runbooks</h2><ul id="list"></ul></section>
+<article id="detail" hidden><h2 id="title"></h2><p id="body"></p></article>
+<section id="editing" hidden><h2 id="form-title">New runbook</h2>
+<form id="runbook-form">
+<label>Title <input name="title" required maxlength="255"></label>
+<label>Instructions <textarea name="body" rows="7" required maxlength="4000"></textarea></label>
+<button>Save runbook</button><button id="new" type="button">New runbook</button>
+<button id="delete" type="button" hidden>Delete selected runbook</button>
+</form></section>
+<section id="members" hidden>
+<h2>Workspace members</h2><ul id="member-list"></ul>
+<form id="member-form">
+<label>Account <select name="username"><option>editor</option><option>viewer</option><option>outsider</option></select></label>
+<label>Access <select name="access"><option>VIEWER</option><option>EDITOR</option></select></label>
+<button>Save access</button>
+</form>
+</section>
 </main><script src="/demo.js"></script></body></html>

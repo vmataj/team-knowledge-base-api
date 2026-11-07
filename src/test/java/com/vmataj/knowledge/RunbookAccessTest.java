@@ -39,10 +39,51 @@ class RunbookAccessTest {
         mvc.perform(post(PATH).header("Authorization", credentials("editor"))
                 .contentType("application/json").content(PAYLOAD))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.title").value("Service recovery"));
+        long created = repository.findByWorkspaceOrderById("support").getLast().id;
+        mvc.perform(put(PATH + "/" + created).header("Authorization", credentials("editor"))
+                .contentType("application/json").content("""
+                    {"title":"Updated recovery","body":"Retry after checking dependencies."}
+                    """))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.title").value("Updated recovery"));
+        mvc.perform(delete(PATH + "/" + created).header("Authorization", credentials("viewer")))
+            .andExpect(status().isForbidden());
+        mvc.perform(delete(PATH + "/" + created).header("Authorization", credentials("editor")))
+            .andExpect(status().isNoContent());
+        mvc.perform(get(PATH + "/" + created).header("Authorization", credentials("editor")))
+            .andExpect(status().isNotFound());
     }
 
     private String credentials(String username) {
         return "Basic " + Base64.getEncoder().encodeToString(
             (username + ":demo-pass").getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void ownerCanCreateWorkspaceGrantAndRevokeAccess() throws Exception {
+        String workspace = "/api/workspaces/platform";
+        mvc.perform(post("/api/workspaces").header("Authorization", credentials("editor"))
+                .contentType("application/json").content("""
+                    {"slug":"platform"}
+                    """))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.role").value("OWNER"));
+        mvc.perform(put(workspace + "/members/viewer").header("Authorization", credentials("editor"))
+                .contentType("application/json").content("""
+                    {"role":"VIEWER"}
+                    """))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.role").value("VIEWER"));
+        mvc.perform(get(workspace + "/runbooks").header("Authorization", credentials("viewer")))
+            .andExpect(status().isOk());
+        mvc.perform(post(workspace + "/runbooks").header("Authorization", credentials("viewer"))
+                .contentType("application/json").content(PAYLOAD))
+            .andExpect(status().isForbidden());
+        mvc.perform(put(workspace + "/members/outsider").header("Authorization", credentials("viewer"))
+                .contentType("application/json").content("""
+                    {"role":"EDITOR"}
+                    """))
+            .andExpect(status().isForbidden());
+        mvc.perform(delete(workspace + "/members/viewer").header("Authorization", credentials("editor")))
+            .andExpect(status().isNoContent());
+        mvc.perform(get(workspace + "/runbooks").header("Authorization", credentials("viewer")))
+            .andExpect(status().isForbidden());
     }
 }

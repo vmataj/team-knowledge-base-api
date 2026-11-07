@@ -1,12 +1,12 @@
 # Team Knowledge Base API
 
-A Spring Boot API and browser demo for sharing incident runbooks across a distributed support team.
+A Spring Boot web app and API for sharing incident runbooks across a distributed support team.
 
 ## Run
 
-Use Java 21 and Maven with `mvn spring-boot:run` (in-memory H2), or use `docker compose up --build` (MySQL). Open http://localhost:8080.
+Use Java 21 and Maven with `mvn spring-boot:run` (in-memory H2), or use `docker compose up --build` (persistent MySQL). Open http://localhost:8081.
 
-Select **viewer**, read the seeded runbook, then try an edit to see HTTP 403. Switch to **editor** to verify the same operation succeeds. The **outsider** belongs to the billing workspace.
+As **editor**, open the seeded support runbook or create one using the form. Select an existing runbook to update or delete it. Create a workspace, then use **Workspace members** to grant or revoke another demo account's access. Switch accounts to verify what an editor or viewer can do.
 
 ## API
 
@@ -18,8 +18,9 @@ Base path: `/api/workspaces/{workspace}/runbooks`. Send HTTP Basic credentials. 
 | GET | Base path + /{id} | Read a runbook |
 | POST | Base path | Create with title and body |
 | PUT | Base path + /{id} | Update title and body |
+| DELETE | Base path + /{id} | Remove a runbook |
 
-Workspace roles are fixed demo fixtures. Queries scope the runbook ID to the workspace even after the caller passes the membership check. This app is intended for a local portfolio demo with fictional data.
+Workspace endpoints include `GET /api/workspaces`, `POST /api/workspaces` with a slug, and owner-only membership management under `/api/workspaces/{workspace}/members`. Workspace membership is persisted in the database. Queries scope each runbook ID to its workspace after checking membership. Accounts are fixed local fixtures for repeatable demos.
 
 ## Verify
 

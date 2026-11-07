@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -24,12 +24,12 @@ class DemoSecurity {
     }
 
     @Bean
-    UserDetailsService users() {
+    UserDetailsManager users() {
         String password = new BCryptPasswordEncoder().encode("demo-pass");
         return new InMemoryUserDetailsManager(
-            User.withUsername("editor").password("{bcrypt}" + password).authorities("SUPPORT_EDIT").build(),
-            User.withUsername("viewer").password("{bcrypt}" + password).authorities("SUPPORT_VIEW").build(),
-            User.withUsername("outsider").password("{bcrypt}" + password).authorities("BILLING_EDIT").build()
+            User.withUsername("editor").password("{bcrypt}" + password).roles("USER").build(),
+            User.withUsername("viewer").password("{bcrypt}" + password).roles("USER").build(),
+            User.withUsername("outsider").password("{bcrypt}" + password).roles("USER").build()
         );
     }
 }

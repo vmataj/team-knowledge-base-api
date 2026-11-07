@@ -6,3 +6,7 @@ article { background: white; border: 1px solid #c8d9e4; border-radius: 16px; pad
 button, select { padding: 9px 12px; font: inherit; border-radius: 8px; margin: 4px; }
 button { background: #1e5067; color: white; border: 1px solid #1e5067; cursor: pointer; }
 #status { font-family: monospace; color: #24576a; }
+form label { display: grid; gap: 4px; margin-bottom: 12px; }
+input, textarea { padding: 8px; font: inherit; border: 1px solid #879cab; border-radius: 6px; }
+#body { white-space: pre-wrap; overflow-wrap: anywhere; }
+li { margin-bottom: 5px; }
