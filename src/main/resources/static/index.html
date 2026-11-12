@@ -5,7 +5,19 @@
 <body><main>
 <p class="eyebrow">TEAM OPERATIONS</p><h1>Team Knowledge Base</h1>
 <p>Find and maintain runbooks for your workspace.</p>
-<label>Demo account <select id="role"><option value="editor">editor</option><option value="viewer">viewer</option><option value="outsider">outsider</option></select></label>
+<section id="account-panel" hidden>
+<p id="account-status" role="status"></p>
+<a id="login" href="/login">Sign in</a>
+<form id="logout" action="/logout" method="post" hidden><input type="hidden" name="_csrf"><button>Sign out</button></form>
+<form id="signup" hidden>
+<h2>Create an account</h2>
+<label>Username <input name="username" required minlength="3" maxlength="40" pattern="[a-z0-9][a-z0-9_\-]{2,39}" autocomplete="username"></label>
+<label>Password <input type="password" name="password" required minlength="12" maxlength="72" autocomplete="new-password"></label>
+<button>Create account</button>
+</form>
+</section>
+<section id="workspace-app" hidden>
+<label id="demo-account">Demo account <select id="role"><option value="editor">editor</option><option value="viewer">viewer</option><option value="outsider">outsider</option></select></label>
 <label>Workspace <select id="workspace"></select></label>
 <form id="workspace-form">
 <label>New workspace <input name="slug" required maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="e.g. platform-support"></label>
@@ -24,9 +36,11 @@
 <section id="members" hidden>
 <h2>Workspace members</h2><ul id="member-list"></ul>
 <form id="member-form">
-<label>Account <select name="username"><option>editor</option><option>viewer</option><option>outsider</option></select></label>
+<label>Account <input name="username" list="demo-users" required maxlength="40"></label>
+<datalist id="demo-users"><option value="editor"><option value="viewer"><option value="outsider"></datalist>
 <label>Access <select name="access"><option>VIEWER</option><option>EDITOR</option></select></label>
 <button>Save access</button>
 </form>
+</section>
 </section>
 </main><script src="/demo.js"></script></body></html>

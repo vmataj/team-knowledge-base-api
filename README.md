@@ -22,6 +22,22 @@ Base path: `/api/workspaces/{workspace}/runbooks`. Send HTTP Basic credentials. 
 
 Workspace endpoints include `GET /api/workspaces`, `POST /api/workspaces` with a slug, and owner-only membership management under `/api/workspaces/{workspace}/members`. Workspace membership is persisted in the database. Queries scope each runbook ID to its workspace after checking membership. Accounts are fixed local fixtures for repeatable demos.
 
-## Verify
+## Registered accounts
+
+For the registered-user workflow, set `APP_PROFILE=private` in the shell before running
+`docker compose up --build`. Create an account and a workspace. Share access with another registered username from the workspace owner panel.
+Docker Compose supplies persistent MySQL and allows cookies over local HTTP.
+The default profile uses the original local demo workflow.
+
+For HTTPS hosting, activate the `private` Spring profile and supply
+`SERVER_ADDRESS=0.0.0.0`, `SPRING_DATASOURCE_URL`,
+`SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`.
+Use a dedicated database for this app and inject the password from the hosting
+provider's secret store. The service honors `PORT` and requires HTTPS cookies by default.
+The bundled Cloud SQL connector accepts a JDBC URL of the form
+`jdbc:mysql:///DATABASE?cloudSqlInstance=PROJECT:REGION:INSTANCE&socketFactory=com.google.cloud.sql.mysql.SocketFactory&cloudSqlRefreshStrategy=lazy`.
+For a first Cloud Run deployment, limit the service to one instance because login sessions are held in memory.
+
+## Tests
 
 Run `mvn verify`. Integration tests exercise authentication, read-only access, cross-workspace isolation, and authorized creation. GitHub Actions runs the same Maven command.

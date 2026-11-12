@@ -4,9 +4,11 @@ import jakarta.persistence.EntityManager;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Configuration
+@Profile("!private")
 class DemoData {
     @Bean
     ApplicationRunner seedRunbook(RunbookRepository repository, WorkspaceRepository workspaces,

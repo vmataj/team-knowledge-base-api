@@ -13,9 +13,12 @@ const memberForm = document.querySelector('#member-form');
 const base = '/api/workspaces';
 let selectedId = null;
 let version = 0;
+let account = null;
 
 async function request(path, method = 'GET', payload) {
-    const headers = { Authorization: 'Basic ' + btoa(role.value + ':demo-pass') };
+    const headers = account
+        ? { [account.csrfHeader]: account.csrfToken }
+        : { Authorization: 'Basic ' + btoa(role.value + ':demo-pass') };
     if (payload) headers['Content-Type'] = 'application/json';
     const response = await fetch(base + path, { headers, method, body: payload && JSON.stringify(payload) });
     if (response.status === 403) throw new Error('This account cannot perform that action.');
@@ -117,7 +120,7 @@ workspaceForm.addEventListener('submit', event => {
 memberForm.addEventListener('submit', event => {
     event.preventDefault();
     const { username, access } = Object.fromEntries(new FormData(memberForm));
-    change('/' + workspace.value + '/members/' + username, 'PUT', { role: access }, 'Access saved.');
+    change('/' + workspace.value + '/members/' + encodeURIComponent(username), 'PUT', { role: access }, 'Access saved.');
 });
 document.querySelector('#new').addEventListener('click', () => select(null));
 deleteButton.addEventListener('click', () => {
@@ -127,4 +130,60 @@ deleteButton.addEventListener('click', () => {
 });
 role.addEventListener('change', () => load());
 workspace.addEventListener('change', () => load());
-load();
+async function initialize() {
+    const response = await fetch('/account', { cache: 'no-store' });
+    const panel = document.querySelector('#account-panel');
+    const accountStatus = document.querySelector('#account-status');
+    const app = document.querySelector('#workspace-app');
+    if (response.status === 404) {
+        app.hidden = false;
+        await load();
+        return;
+    }
+    if (!response.ok) throw new Error('Could not check your session. Reload to try again.');
+    account = await response.json();
+    panel.hidden = false;
+    document.querySelector('#demo-account').hidden = true;
+    memberForm.elements.username.removeAttribute('list');
+    if (account.username) {
+        accountStatus.textContent = 'Signed in as ' + account.username + '.';
+        document.querySelector('#login').hidden = true;
+        const logout = document.querySelector('#logout');
+        logout.elements._csrf.value = account.csrfToken;
+        logout.hidden = false;
+        app.hidden = false;
+        await load();
+        return;
+    }
+    const signup = document.querySelector('#signup');
+    signup.hidden = false;
+    signup.addEventListener('submit', async event => {
+        event.preventDefault();
+        const data = Object.fromEntries(new FormData(signup));
+        const button = signup.querySelector('button');
+        button.disabled = true;
+        try {
+            const result = await fetch('/account/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', [account.csrfHeader]: account.csrfToken },
+                body: JSON.stringify(data)
+            });
+            if (!result.ok) {
+                accountStatus.textContent = result.status === 409
+                    ? 'That username is already in use.'
+                    : 'Could not create the account. Check your username and password.';
+                return;
+            }
+            location.assign('/login');
+        } catch {
+            accountStatus.textContent = 'Could not reach the server. Try again.';
+        } finally {
+            button.disabled = false;
+        }
+    });
+}
+
+initialize().catch(error => {
+    document.querySelector('#account-panel').hidden = false;
+    document.querySelector('#account-status').textContent = error.message;
+});
