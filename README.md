@@ -1,15 +1,9 @@
-# Runbook Desk
+# Daymark
 
-I built this to keep the steps for recurring QA and support tasks in one place. Create a workspace, write articles, search their titles and instructions, and give teammates view or edit access. The public site has an example library you can browse without signing in.
+A task planner for work, study, or home. Organize tasks by category, reorder them, and track completed focus sessions. The daily plan picks up to three open tasks by due date.
 
-[Live app](https://team-knowledge-base-api-f2st.onrender.com/)
+Run `docker compose up --build` and visit [localhost:8081](http://localhost:8081). Guests save changes in their browser. Sign in to save a separate planner to your account.
 
-Java 21, Spring Boot, Spring MVC, Spring Security, Spring Data JPA and vanilla JavaScript. Docker Compose runs MySQL locally. The hosted app uses PostgreSQL on Neon.
+Java 21, Spring Boot, Spring Security, Spring Data JPA, JavaScript, and MySQL locally. The hosted configuration supports PostgreSQL.
 
-## Run it
-
-Run `docker compose up --build` and open [localhost:8081](http://localhost:8081).
-
-## Tests
-
-Run `mvn test` for the JUnit 5, Mockito and Spring MockMvc tests. Run `mvn test -Dbrowser.tests=true` to include Selenium WebDriver tests in headless Chrome. Mockito checks that unauthorized searches never reach the article repository, MockMvc covers search and workspace permissions, and Selenium creates, finds, edits and deletes an article.
+Run `mvn test` for JUnit, MockMvc, and Mockito checks. Add `-Dbrowser.tests=true` for the Selenium guest workflow in Chrome.

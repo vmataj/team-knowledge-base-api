@@ -1,87 +1,71 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Runbook Desk</title><link rel="stylesheet" href="/style.css"></head>
-<body><main>
-<nav class="topbar" aria-label="App navigation"><a class="wordmark" href="/">Runbook Desk</a>
-<div id="account-panel" class="account-nav" hidden>
-<span id="account-status" role="status"></span><a id="login" href="/login.html">Sign in</a>
-<a id="signup-link" class="button" href="/signup.html">Create account</a>
-<form id="logout" action="/logout" method="post" hidden><input type="hidden" name="_csrf"><button>Sign out</button></form></div></nav>
-<header class="hero"><h1>Runbook Desk</h1><p>Find the steps for a task, write down what worked, and share it with your team.</p></header>
-<p id="startup-status" role="status"></p>
-<section id="library" hidden aria-label="Knowledge base">
-    <div id="public-intro" class="library-intro" hidden>
-        <strong>Example library</strong>
-        <p>Browse these example articles, or create an account to start a private workspace.</p>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daymark · Task Planner</title>
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/account.js"></script>
+  <script defer src="/planner.js"></script>
+</head>
+<body class="planner">
+<a class="skip" href="#dashboard">Skip to planner</a>
+<aside class="rail">
+  <a class="brand" href="#dashboard"><span aria-hidden="true">◴</span> Daymark</a>
+  <nav aria-label="Planner">
+    <a href="#dashboard">Overview</a><a href="#tasks">Tasks</a><a href="#focus">Focus timer</a><a href="#activity">Activity</a>
+  </nav>
+</aside>
+<main id="dashboard">
+  <header class="topbar">
+    <div><p id="today"></p><h1>Your planner</h1></div>
+    <div id="account-panel" class="account-nav" hidden>
+      <span id="account-status"></span><a id="login" href="/login.html">Sign in</a>
+      <a id="signup-link" class="button" href="/signup.html">Create account</a>
+      <form id="logout" action="/logout" method="post" hidden><input type="hidden" name="_csrf"><button>Sign out</button></form>
     </div>
-    <div id="workspace-tools" hidden>
-        <div class="library-toolbar">
-            <label id="demo-account">Local demo role
-                <select id="role"><option value="editor">Owner</option><option value="viewer">Viewer</option><option value="outsider">Other workspace owner</option></select>
-            </label>
-            <label id="workspace-picker" hidden>Workspace <select id="workspace"></select></label>
-            <details id="workspace-create">
-                <summary>Create workspace</summary>
-                <form id="workspace-form">
-                    <label>Workspace name
-                        <input name="slug" required maxlength="60" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="qa-handbook">
-                        <small>Use lowercase letters, numbers and hyphens.</small>
-                    </label>
-                    <button>Create workspace</button>
-                </form>
-            </details>
-        </div>
-    </div>
-    <p id="status" role="status"></p>
-    <div id="catalog" class="runbook-grid" hidden>
-        <section class="runbook-shelf" aria-labelledby="articles-heading">
-            <h2 id="articles-heading">Articles</h2>
-            <form id="article-search">
-                <label>Search articles <input id="search" type="search" placeholder="Search titles and instructions" maxlength="255"></label>
-                <button type="submit" class="secondary">Search</button>
-            </form>
-            <p id="result-count" aria-live="polite"></p>
-            <ul id="list"></ul>
-            <button id="new" type="button" hidden>New article</button>
-        </section>
-        <div>
-            <p id="empty-article" class="empty-article"></p>
-            <article id="detail" hidden>
-                <h2 id="title"></h2><p id="body"></p>
-                <button id="edit" type="button" hidden>Edit article</button>
-            </article>
-            <section id="editing" hidden>
-                <h2 id="form-title">New article</h2>
-                <form id="runbook-form">
-                    <label>Title <input name="title" required maxlength="255"></label>
-                    <label>Instructions <textarea name="body" rows="9" required maxlength="4000"></textarea></label>
-                    <div class="article-actions">
-                        <button>Save article</button>
-                        <button id="cancel" type="button" class="secondary">Cancel</button>
-                        <button id="delete" type="button" class="secondary" hidden>Delete article</button>
-                    </div>
-                </form>
-            </section>
-        </div>
-    </div>
-    <details id="members" hidden>
-        <summary>Workspace members</summary>
-        <ul id="member-list"></ul>
-        <form id="member-form">
-            <label>Registered username <input name="username" list="demo-users" required maxlength="40"></label>
-            <datalist id="demo-users"><option value="editor"><option value="viewer"><option value="outsider"></datalist>
-            <label>Access <select name="access"><option value="VIEWER">Can view</option><option value="EDITOR">Can edit</option></select></label>
-            <button>Save access</button>
-        </form>
-    </details>
-    <dialog id="delete-dialog" aria-labelledby="delete-title">
-        <h2 id="delete-title">Delete article?</h2>
-        <p id="delete-description"></p>
-        <form method="dialog" class="article-actions">
-            <button class="secondary" value="cancel" autofocus>Keep article</button>
-            <button value="delete">Delete article</button>
-        </form>
-    </dialog>
-</section>
-</main><script src="/account.js" defer></script><script src="/demo.js" defer></script></body></html>
+  </header>
+  <p id="mode">Loading planner…</p>
+  <p id="notice" role="status"></p>
+  <div class="metrics" aria-label="Planner summary">
+    <div><span>Open tasks</span><strong id="open-count">0</strong></div>
+    <div><span>Done today</span><strong id="done-count">0</strong></div>
+    <div><span>Focus today</span><strong id="focus-total">0 min</strong></div>
+  </div>
+  <div class="dashboard-grid">
+    <section class="panel tasks" id="tasks" aria-labelledby="tasks-heading">
+      <header><h2 id="tasks-heading">Tasks</h2><button id="add" type="button" disabled>New task</button></header>
+      <div class="filters">
+        <label>Show<select id="view"><option value="all">All tasks</option><option value="today">Due today</option><option value="upcoming">Upcoming</option><option value="done">Completed</option></select></label>
+        <label>Category<select id="category-filter"><option value="">All categories</option></select></label>
+      </div>
+      <p class="hint">Drag tasks to reorder them in All tasks, or use the move buttons.</p>
+      <ul id="task-list"></ul><p id="empty" hidden>No tasks in this view.</p>
+    </section>
+    <section class="panel focus" id="focus" aria-labelledby="focus-heading">
+      <h2 id="focus-heading">Focus timer</h2>
+      <div class="dial" id="dial"><div><strong id="clock">25:00</strong><span id="timer-state">Ready</span></div></div>
+      <label>Session length<select id="duration"><option value="15">15 minutes</option><option value="25" selected>25 minutes</option><option value="50">50 minutes</option></select></label>
+      <div class="timer-actions"><button id="timer" disabled>Start focus</button><button class="secondary" id="reset" disabled>Reset</button></div>
+    </section>
+    <section class="panel activity" id="activity">
+      <h2>Focus this week</h2><p id="week-total"></p><ol id="week"></ol>
+    </section>
+    <section class="panel day-plan">
+      <h2>Plan the day</h2><p>Turn your open tasks into a short list, ordered by due date.</p>
+      <button class="secondary" id="suggest" disabled>Build today’s plan</button><ol id="suggestions"></ol>
+    </section>
+  </div>
+</main>
+<dialog id="task-dialog" aria-labelledby="editor-title">
+  <form id="task-form">
+    <h2 id="editor-title">New task</h2>
+    <label>Task<input name="title" maxlength="120" required autofocus></label>
+    <label>Category<input name="category" maxlength="40" value="General" required></label>
+    <label>Due date<input name="dueDate" type="date"></label>
+    <p id="task-error" role="status"></p>
+    <div class="timer-actions"><button>Save task</button><button class="secondary" id="cancel" type="button">Cancel</button></div>
+  </form>
+</dialog>
+</body>
+</html>

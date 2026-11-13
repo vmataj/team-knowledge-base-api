@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
-import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@Profile("private")
 @RequestMapping("/account")
 class AccountController {
     private static final Set<String> RESERVED = Set.of("editor", "viewer", "outsider");
