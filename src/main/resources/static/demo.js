@@ -131,59 +131,20 @@ deleteButton.addEventListener('click', () => {
 role.addEventListener('change', () => load());
 workspace.addEventListener('change', () => load());
 async function initialize() {
-    const response = await fetch('/account', { cache: 'no-store' });
-    const panel = document.querySelector('#account-panel');
-    const accountStatus = document.querySelector('#account-status');
-    const app = document.querySelector('#workspace-app');
-    if (response.status === 404) {
-        app.hidden = false;
-        await load();
-        return;
-    }
-    if (!response.ok) throw new Error('Could not check your session. Reload to try again.');
-    account = await response.json();
-    panel.hidden = false;
-    document.querySelector('#demo-account').hidden = true;
-    memberForm.elements.username.removeAttribute('list');
-    if (account.username) {
-        accountStatus.textContent = 'Signed in as ' + account.username + '.';
-        document.querySelector('#login').hidden = true;
-        const logout = document.querySelector('#logout');
-        logout.elements._csrf.value = account.csrfToken;
-        logout.hidden = false;
-        app.hidden = false;
-        await load();
-        return;
-    }
-    const signup = document.querySelector('#signup');
-    signup.hidden = false;
-    signup.addEventListener('submit', async event => {
-        event.preventDefault();
-        const data = Object.fromEntries(new FormData(signup));
-        const button = signup.querySelector('button');
-        button.disabled = true;
-        try {
-            const result = await fetch('/account/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', [account.csrfHeader]: account.csrfToken },
-                body: JSON.stringify(data)
-            });
-            if (!result.ok) {
-                accountStatus.textContent = result.status === 409
-                    ? 'That username is already in use.'
-                    : 'Could not create the account. Check your username and password.';
-                return;
-            }
-            location.assign('/login');
-        } catch {
-            accountStatus.textContent = 'Could not reach the server. Try again.';
-        } finally {
-            button.disabled = false;
+    account = await loadAccount();
+    if (account) {
+        updateAccountHeader(account);
+        document.querySelector('#demo-account').hidden = true;
+        memberForm.elements.username.removeAttribute('list');
+        if (!account.username) {
+            document.querySelector('#workspace-preview').hidden = false;
+            return;
         }
-    });
+    }
+    document.querySelector('#workspace-app').hidden = false;
+    await load();
 }
 
 initialize().catch(error => {
-    document.querySelector('#account-panel').hidden = false;
-    document.querySelector('#account-status').textContent = error.message;
+    document.querySelector('#startup-status').textContent = error.message;
 });

@@ -3,19 +3,20 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Team Knowledge Base</title><link rel="stylesheet" href="/style.css"></head>
 <body><main>
-<p class="eyebrow">TEAM OPERATIONS</p><h1>Team Knowledge Base</h1>
-<p>Find and maintain runbooks for your workspace.</p>
-<section id="account-panel" hidden>
-<p id="account-status" role="status"></p>
-<a id="login" href="/login">Sign in</a>
-<form id="logout" action="/logout" method="post" hidden><input type="hidden" name="_csrf"><button>Sign out</button></form>
-<form id="signup" hidden>
-<h2>Create an account</h2>
-<label>Username <input name="username" required minlength="3" maxlength="40" pattern="[a-z0-9][a-z0-9_\-]{2,39}" autocomplete="username"></label>
-<label>Password <input type="password" name="password" required minlength="12" maxlength="72" autocomplete="new-password"></label>
-<button>Create account</button>
-</form>
-</section>
+<nav class="topbar" aria-label="App navigation"><a class="wordmark" href="/">Runbook library</a>
+<div id="account-panel" class="account-nav" hidden>
+<span id="account-status" role="status"></span><a id="login" href="/login.html">Sign in</a>
+<a id="signup-link" class="button" href="/signup.html">Create account</a>
+<form id="logout" action="/logout" method="post" hidden><input type="hidden" name="_csrf"><button>Sign out</button></form></div></nav>
+<header class="hero"><h1>Team Knowledge Base</h1><p>Keep operational instructions organized by workspace.</p></header>
+<p id="startup-status" role="status"></p>
+<section id="workspace-preview" hidden>
+<div class="section-head"><h2>Platform support</h2><span class="sample-tag">Sample workspace</span></div>
+<p>Explore these runbooks. Sign in to create a workspace and manage your own instructions.</p>
+<div class="runbook-shelf">
+<details open><summary>Restart a failed worker</summary><ol><li>Check the queue depth and confirm that jobs are safe to retry.</li><li>Restart the worker, then watch the error rate until it stabilizes.</li><li>Record the recovery time in the incident log.</li></ol></details>
+<details><summary>Investigate a slow API</summary><ol><li>Identify the endpoint and the start of the latency increase.</li><li>Compare database and downstream timings in a slow request trace.</li><li>Verify that the fix reduces latency before closing the incident.</li></ol></details>
+</div></section>
 <section id="workspace-app" hidden>
 <label id="demo-account">Demo account <select id="role"><option value="editor">editor</option><option value="viewer">viewer</option><option value="outsider">outsider</option></select></label>
 <label>Workspace <select id="workspace"></select></label>
@@ -24,8 +25,8 @@
 <button>Create workspace</button>
 </form>
 <p id="status" role="status"></p>
-<section aria-label="Runbooks"><h2>Runbooks</h2><ul id="list"></ul></section>
-<article id="detail" hidden><h2 id="title"></h2><p id="body"></p></article>
+<div class="runbook-grid"><section aria-label="Runbooks" class="runbook-shelf"><h2>Runbooks</h2><ul id="list"></ul></section>
+<article id="detail" hidden><h2 id="title"></h2><p id="body"></p></article></div>
 <section id="editing" hidden><h2 id="form-title">New runbook</h2>
 <form id="runbook-form">
 <label>Title <input name="title" required maxlength="255"></label>
@@ -43,4 +44,4 @@
 </form>
 </section>
 </section>
-</main><script src="/demo.js"></script></body></html>
+</main><script src="/account.js"></script><script src="/demo.js"></script></body></html>
