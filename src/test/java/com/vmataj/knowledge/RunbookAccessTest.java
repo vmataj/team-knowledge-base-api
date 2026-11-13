@@ -59,6 +59,20 @@ class RunbookAccessTest {
     }
 
     @Test
+    void searchMatchesTitlesAndInstructionsOnlyInsideTheSelectedWorkspace() throws Exception {
+        repository.save(new Runbook("support", "Release checklist", "Verify permissions."));
+        repository.save(new Runbook("support", "Smoke testing", "Verify the release version."));
+        repository.save(new Runbook("billing", "Release reconciliation", "Check the ledger."));
+
+        mvc.perform(get(PATH).param("q", " ReLeAsE ").header("Authorization", credentials("viewer")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[*].title").value(org.hamcrest.Matchers.containsInAnyOrder(
+                "Release checklist", "Smoke testing")));
+        mvc.perform(get(PATH).param("q", "release").header("Authorization", credentials("outsider")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void ownerCanCreateWorkspaceGrantAndRevokeAccess() throws Exception {
         String workspace = "/api/workspaces/platform";
         mvc.perform(post("/api/workspaces").header("Authorization", credentials("editor"))

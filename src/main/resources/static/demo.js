@@ -1,107 +1,163 @@
-const role = document.querySelector('#role');
-const workspace = document.querySelector('#workspace');
-const statusLine = document.querySelector('#status');
-const list = document.querySelector('#list');
-const detail = document.querySelector('#detail');
-const form = document.querySelector('#runbook-form');
-const editor = document.querySelector('#editing');
-const deleteButton = document.querySelector('#delete');
-const workspaceForm = document.querySelector('#workspace-form');
-const members = document.querySelector('#members');
-const memberList = document.querySelector('#member-list');
-const memberForm = document.querySelector('#member-form');
-const base = '/api/workspaces';
-let selectedId = null;
-let version = 0;
-let account = null;
+const $ = id => document.getElementById(id);
+const workspace = $('workspace');
+const role = $('role');
+const search = $('search');
+const form = $('runbook-form');
+const memberForm = $('member-form');
+const examples = [
+    { id: 1, title: 'Triage a failed build', body: 'Open the failed CI job and find the first error.\n\nRe-run the failing command locally with the same Java version. If it still fails, attach the log and reproduction steps to the ticket.' },
+    { id: 2, title: 'Prepare a release smoke test', body: 'Confirm the build number and test environment.\n\nCheck sign-in, the main workflow, and permissions using separate accounts. Record the result and link any defects before marking the build ready.' },
+    { id: 3, title: 'Write a reproducible bug report', body: 'Record the environment and test data, then list the shortest steps that reproduce the issue.\n\nDescribe what happened and what you expected. Attach a screenshot or the relevant log excerpt.' }
+];
+
+let account;
+let articles = [];
+let current;
+let selected;
+let loadVersion = 0;
 
 async function request(path, method = 'GET', payload) {
     const headers = account
         ? { [account.csrfHeader]: account.csrfToken }
         : { Authorization: 'Basic ' + btoa(role.value + ':demo-pass') };
     if (payload) headers['Content-Type'] = 'application/json';
-    const response = await fetch(base + path, { headers, method, body: payload && JSON.stringify(payload) });
-    if (response.status === 403) throw new Error('This account cannot perform that action.');
-    if (response.status === 409) throw new Error('That workspace or access change conflicts with an existing record.');
-    if (!response.ok) throw new Error('Request failed (HTTP ' + response.status + ').');
+    const response = await fetch('/api/workspaces' + path, {
+        method, headers, body: payload && JSON.stringify(payload)
+    });
+    if (response.redirected || response.status === 401) throw new Error('Sign in again to continue.');
+    if (response.status === 403) throw new Error('You do not have access to do that.');
+    if (response.status === 404) throw new Error('That account or article could not be found.');
+    if (response.status === 409) throw new Error('That workspace name is already in use.');
+    if (response.status === 400) throw new Error('Check the form fields and try again.');
+    if (!response.ok) throw new Error('The request failed. Try again.');
     if (response.status !== 204) return response.json();
 }
 
-function select(runbook) {
-    selectedId = runbook?.id ?? null;
-    detail.hidden = !runbook;
-    document.querySelector('#title').textContent = runbook?.title ?? '';
-    document.querySelector('#body').textContent = runbook?.body ?? '';
-    document.querySelector('#form-title').textContent = runbook ? 'Edit runbook' : 'New runbook';
-    form.elements.title.value = runbook?.title ?? '';
-    form.elements.body.value = runbook?.body ?? '';
-    deleteButton.hidden = !runbook;
+function canEdit() {
+    return current && current.role !== 'VIEWER';
+}
+
+function openArticle(article) {
+    selected = article;
+    $('editing').hidden = true;
+    $('detail').hidden = !article;
+    $('empty-article').hidden = Boolean(article);
+    $('empty-article').textContent = articles.length ? 'Choose an article to read it.'
+        : canEdit() ? 'This workspace has no articles. Use New article to write the first one.'
+        : 'There are no articles in this workspace yet.';
+    $('title').textContent = article?.title ?? '';
+    $('body').textContent = article?.body ?? '';
+    $('edit').hidden = !canEdit();
+    for (const button of $('list').querySelectorAll('button')) {
+        if (button.dataset.id === String(article?.id)) button.setAttribute('aria-current', 'true');
+        else button.removeAttribute('aria-current');
+    }
+}
+
+function renderArticles() {
+    const term = search.value.trim().toLowerCase();
+    const visible = current ? articles : articles.filter(article => [article.title, article.body]
+        .some(text => text.toLowerCase().includes(term)));
+    $('result-count').textContent = visible.length ? visible.length + (visible.length === 1 ? ' article' : ' articles')
+        : term ? 'No articles match your search.' : 'No articles yet.';
+    $('list').replaceChildren(...visible.map(article => {
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = article.title;
+        button.dataset.id = article.id;
+        button.addEventListener('click', () => openArticle(article));
+        item.append(button);
+        return item;
+    }));
+    return visible;
 }
 
 function renderMembers(entries) {
-    for (const member of entries) {
+    $('member-list').replaceChildren(...entries.map(member => {
         const item = document.createElement('li');
-        item.textContent = member.username + ' · ' + member.role;
+        const label = { OWNER: 'Owner', EDITOR: 'Can edit', VIEWER: 'Can view' }[member.role];
+        item.textContent = member.username + ' (' + label + ')';
         if (member.role !== 'OWNER') {
             const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'secondary';
             remove.textContent = 'Remove';
+            remove.setAttribute('aria-label', 'Remove ' + member.username);
             remove.addEventListener('click', () =>
-                change('/' + workspace.value + '/members/' + member.username, 'DELETE', undefined, 'Access removed.'));
+                change('/' + current.workspace + '/members/' + encodeURIComponent(member.username),
+                    'DELETE', undefined, 'Access removed.', selected?.id));
             item.append(remove);
         }
-        memberList.append(item);
-    }
+        return item;
+    }));
 }
 
-async function load(preferredWorkspace = workspace.value, preferredId, message) {
-    const active = ++version;
-    list.replaceChildren();
-    memberList.replaceChildren();
-    editor.hidden = members.hidden = true;
-    select(null);
-    statusLine.textContent = 'Loading workspaces…';
+async function load(preferred = workspace.value, articleId, message = '') {
+    const version = ++loadVersion;
+    current = selected = null;
+    $('catalog').hidden = $('members').hidden = true;
+    $('status').textContent = 'Loading workspace…';
     try {
         const access = await request('');
-        if (active !== version) return;
-        workspace.replaceChildren(...access.map(entry => new Option(entry.workspace + ' · ' + entry.role, entry.workspace)));
-        const current = access.find(entry => entry.workspace === preferredWorkspace) ?? access[0];
-        if (!current) {
-            statusLine.textContent = 'Create a workspace to get started.';
+        if (version !== loadVersion) return;
+        workspace.replaceChildren(...access.map(entry => new Option(entry.workspace, entry.workspace)));
+        $('workspace-picker').hidden = !access.length;
+        const next = access.find(entry => entry.workspace === preferred) ?? access[0];
+        if (!next) {
+            $('workspace-create').open = true;
+            $('status').textContent = 'Create your first workspace to start writing articles.';
             return;
         }
-        workspace.value = current.workspace;
-        const path = '/' + current.workspace;
-        const [runbooks, entries] = await Promise.all([
-            request(path + '/runbooks'),
-            current.role === 'OWNER' ? request(path + '/members') : Promise.resolve([])
+        workspace.value = next.workspace;
+        const path = '/' + next.workspace;
+        const [loaded, entries] = await Promise.all([
+            request(path + '/runbooks?q=' + encodeURIComponent(search.value.trim())),
+            next.role === 'OWNER' ? request(path + '/members') : Promise.resolve([])
         ]);
-        if (active !== version) return;
-        editor.hidden = current.role === 'VIEWER';
-        members.hidden = current.role !== 'OWNER';
+        if (version !== loadVersion) return;
+        current = next;
+        articles = loaded;
+        $('catalog').hidden = false;
+        $('new').hidden = !canEdit();
+        $('members').hidden = next.role !== 'OWNER';
         renderMembers(entries);
-        for (const runbook of runbooks) {
-            const item = document.createElement('li');
-            const button = document.createElement('button');
-            button.textContent = runbook.title;
-            button.addEventListener('click', () => select(runbook));
-            item.append(button);
-            list.append(item);
-        }
-        select(runbooks.find(runbook => runbook.id === preferredId));
-        statusLine.textContent = message ?? (runbooks.length ? 'Select a runbook to open it.' : 'No runbooks yet.');
+        const visible = renderArticles();
+        openArticle(visible.find(article => article.id === articleId) ?? visible[0]);
+        $('status').textContent = message;
     } catch (error) {
-        if (active === version) statusLine.textContent = error.message;
+        if (version === loadVersion) $('status').textContent = error.message;
     }
 }
 
-async function change(path, method, payload, message) {
-    const controls = [role, workspace, ...document.querySelectorAll('form input, form select, form textarea, button')];
+function editArticle(article) {
+    if (!canEdit()) return;
+    selected = article;
+    $('detail').hidden = $('empty-article').hidden = true;
+    $('editing').hidden = false;
+    $('form-title').textContent = article ? 'Edit article' : 'New article';
+    $('delete').hidden = !article;
+    form.elements.title.value = article?.title ?? '';
+    form.elements.body.value = article?.body ?? '';
+    form.elements.title.focus();
+}
+
+async function change(path, method, payload, message, articleId) {
+    const controls = [...$('library').querySelectorAll('button, input, textarea, select')]
+        .filter(control => !control.disabled);
     controls.forEach(control => { control.disabled = true; });
     try {
         const result = await request(path, method, payload);
-        await load(path === '' ? result.workspace : workspace.value, result?.id, message);
+        if (path === '') {
+            $('workspace-form').reset();
+            $('workspace-create').open = false;
+            search.value = '';
+        }
+        if (path.includes('/runbooks') && method !== 'DELETE') search.value = '';
+        if (path.includes('/members/') && method === 'PUT') memberForm.reset();
+        await load(result?.workspace ?? workspace.value, result?.id ?? articleId, message);
     } catch (error) {
-        statusLine.textContent = error.message;
+        $('status').textContent = error.message;
     } finally {
         controls.forEach(control => { control.disabled = false; });
     }
@@ -109,42 +165,70 @@ async function change(path, method, payload, message) {
 
 form.addEventListener('submit', event => {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(form));
-    const path = '/' + workspace.value + '/runbooks' + (selectedId ? '/' + selectedId : '');
-    change(path, selectedId ? 'PUT' : 'POST', payload, 'Runbook saved.');
+    const { title, body } = Object.fromEntries(new FormData(form));
+    if (!title.trim() || !body.trim()) {
+        $('status').textContent = 'Enter a title and instructions.';
+        return;
+    }
+    const path = '/' + current.workspace + '/runbooks';
+    change(selected ? path + '/' + selected.id : path, selected ? 'PUT' : 'POST',
+        { title: title.trim(), body: body.trim() }, 'Article saved.');
 });
-workspaceForm.addEventListener('submit', event => {
+$('workspace-form').addEventListener('submit', event => {
     event.preventDefault();
-    change('', 'POST', { slug: workspaceForm.elements.slug.value }, 'Workspace created.');
+    change('', 'POST', { slug: event.currentTarget.elements.slug.value }, 'Workspace created.');
 });
 memberForm.addEventListener('submit', event => {
     event.preventDefault();
     const { username, access } = Object.fromEntries(new FormData(memberForm));
-    change('/' + workspace.value + '/members/' + encodeURIComponent(username), 'PUT', { role: access }, 'Access saved.');
+    change('/' + current.workspace + '/members/' + encodeURIComponent(username.trim().toLowerCase()),
+        'PUT', { role: access }, 'Access saved.', selected?.id);
 });
-document.querySelector('#new').addEventListener('click', () => select(null));
-deleteButton.addEventListener('click', () => {
-    if (confirm('Delete this runbook?')) {
-        change('/' + workspace.value + '/runbooks/' + selectedId, 'DELETE', undefined, 'Runbook deleted.');
+$('new').addEventListener('click', () => editArticle());
+$('edit').addEventListener('click', () => editArticle(selected));
+$('cancel').addEventListener('click', () => openArticle(selected));
+$('delete').addEventListener('click', () => {
+    if (!selected) return;
+    $('delete-description').textContent = selected.title;
+    $('delete-dialog').returnValue = '';
+    $('delete-dialog').showModal();
+});
+$('delete-dialog').addEventListener('close', event => {
+    if (selected && event.currentTarget.returnValue === 'delete') {
+        change('/' + current.workspace + '/runbooks/' + selected.id, 'DELETE', undefined, 'Article deleted.');
     }
 });
-role.addEventListener('change', () => load());
-workspace.addEventListener('change', () => load());
+$('article-search').addEventListener('submit', event => {
+    event.preventDefault();
+    if (current) {
+        load(workspace.value, selected?.id);
+        return;
+    }
+    const visible = renderArticles();
+    openArticle(visible.includes(selected) ? selected : visible[0]);
+});
+for (const picker of [role, workspace]) picker.addEventListener('change', () => {
+    search.value = '';
+    load(workspace.value);
+});
+
 async function initialize() {
     account = await loadAccount();
+    $('library').hidden = false;
     if (account) {
         updateAccountHeader(account);
-        document.querySelector('#demo-account').hidden = true;
+        $('demo-account').hidden = true;
         memberForm.elements.username.removeAttribute('list');
         if (!account.username) {
-            document.querySelector('#workspace-preview').hidden = false;
+            $('public-intro').hidden = false;
+            $('catalog').hidden = false;
+            articles = examples;
+            openArticle(renderArticles()[0]);
             return;
         }
     }
-    document.querySelector('#workspace-app').hidden = false;
+    $('workspace-tools').hidden = false;
     await load();
 }
 
-initialize().catch(error => {
-    document.querySelector('#startup-status').textContent = error.message;
-});
+initialize().catch(error => { $('startup-status').textContent = error.message; });

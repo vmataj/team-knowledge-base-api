@@ -51,20 +51,31 @@ p[role="status"]:empty { display: none; }
 }
 
 .hero h1 { font-weight: 400; }
-#workspace-preview, #workspace-app { padding: clamp(1rem, 3vw, 2rem); background: var(--surface); border: 1px solid var(--line); border-left: .4rem solid var(--accent); }
-#workspace-app > label { display: inline-grid; margin: 0 .7rem .8rem 0; }
+#library { padding: clamp(1rem, 3vw, 2rem); background: var(--surface); border: 1px solid var(--line); border-left: .4rem solid var(--accent); }
+.library-intro { margin-bottom: 1rem; }
+.library-toolbar { display: flex; align-items: start; flex-wrap: wrap; gap: .75rem 1.25rem; margin-bottom: 1rem; }
+summary { cursor: pointer; font-weight: 700; }
+#workspace-create summary { padding-block: .45rem; color: var(--accent); }
 #workspace-form, #member-form { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; margin-bottom: 1rem; }
 .runbook-shelf { background: var(--paper); padding: 1rem; }
-.runbook-shelf details { padding: .7rem 0; border-bottom: 1px solid var(--line); }
-.runbook-shelf summary { cursor: pointer; font-weight: 700; }
+#article-search { display: flex; gap: .45rem; align-items: end; flex-wrap: wrap; }
+#article-search label { flex: 1 1 12rem; }
+#result-count { margin: .55rem 0; font-size: .9rem; }
 .runbook-shelf li { margin: .4rem 0; }
 .runbook-grid { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: 1.1rem; align-items: start; }
 #list { list-style: none; margin: 0; padding: 0; }
 #list button { width: 100%; background: var(--surface); color: var(--ink); border-color: var(--line); text-align: left; }
-#detail { padding: 1rem; border: 1px solid var(--line); }
+#list button[aria-current] { border-color: var(--accent); box-shadow: inset .2rem 0 var(--accent); }
+#new { margin-top: .65rem; }
+#detail, .empty-article { padding: 1rem; border: 1px solid var(--line); }
 #body { white-space: pre-wrap; overflow-wrap: anywhere; }
-#editing, #members { margin-top: 1.2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+#editing { padding: 1rem; border: 1px solid var(--line); }
+#members { margin-top: 1.2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
 #runbook-form { display: grid; gap: .7rem; justify-items: start; }
 #runbook-form label { width: min(100%, 42rem); }
+.article-actions { display: flex; flex-wrap: wrap; gap: .45rem; }
+.secondary { background: var(--surface); color: var(--accent); }
+dialog { max-width: min(30rem, 90vw); padding: 1.5rem; border: 1px solid var(--line); border-radius: .6rem; color: var(--ink); }
+dialog::backdrop { background: rgb(39 32 63 / .45); }
 #member-list button { margin-left: .65rem; }
 @media (max-width: 42rem) { .runbook-grid { grid-template-columns: 1fr; } }

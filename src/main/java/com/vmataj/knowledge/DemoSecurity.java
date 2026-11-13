@@ -18,7 +18,7 @@ class DemoSecurity {
     @Bean
     SecurityFilterChain security(HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/demo.js", "/style.css", "/account", "/error").permitAll()
+                .requestMatchers("/", "/index.html", "/demo.js", "/account.js", "/style.css", "/account", "/error").permitAll()
                 .anyRequest().authenticated())
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
             .httpBasic(withDefaults())

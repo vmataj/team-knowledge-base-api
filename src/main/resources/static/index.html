@@ -1,47 +1,87 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Team Knowledge Base</title><link rel="stylesheet" href="/style.css"></head>
+<title>Runbook Desk</title><link rel="stylesheet" href="/style.css"></head>
 <body><main>
-<nav class="topbar" aria-label="App navigation"><a class="wordmark" href="/">Runbook library</a>
+<nav class="topbar" aria-label="App navigation"><a class="wordmark" href="/">Runbook Desk</a>
 <div id="account-panel" class="account-nav" hidden>
 <span id="account-status" role="status"></span><a id="login" href="/login.html">Sign in</a>
 <a id="signup-link" class="button" href="/signup.html">Create account</a>
 <form id="logout" action="/logout" method="post" hidden><input type="hidden" name="_csrf"><button>Sign out</button></form></div></nav>
-<header class="hero"><h1>Team Knowledge Base</h1><p>Keep operational instructions organized by workspace.</p></header>
+<header class="hero"><h1>Runbook Desk</h1><p>Find the steps for a task, write down what worked, and share it with your team.</p></header>
 <p id="startup-status" role="status"></p>
-<section id="workspace-preview" hidden>
-<div class="section-head"><h2>Platform support</h2><span class="sample-tag">Sample workspace</span></div>
-<p>Explore these runbooks. Sign in to create a workspace and manage your own instructions.</p>
-<div class="runbook-shelf">
-<details open><summary>Restart a failed worker</summary><ol><li>Check the queue depth and confirm that jobs are safe to retry.</li><li>Restart the worker, then watch the error rate until it stabilizes.</li><li>Record the recovery time in the incident log.</li></ol></details>
-<details><summary>Investigate a slow API</summary><ol><li>Identify the endpoint and the start of the latency increase.</li><li>Compare database and downstream timings in a slow request trace.</li><li>Verify that the fix reduces latency before closing the incident.</li></ol></details>
-</div></section>
-<section id="workspace-app" hidden>
-<label id="demo-account">Demo account <select id="role"><option value="editor">editor</option><option value="viewer">viewer</option><option value="outsider">outsider</option></select></label>
-<label>Workspace <select id="workspace"></select></label>
-<form id="workspace-form">
-<label>New workspace <input name="slug" required maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="e.g. platform-support"></label>
-<button>Create workspace</button>
-</form>
-<p id="status" role="status"></p>
-<div class="runbook-grid"><section aria-label="Runbooks" class="runbook-shelf"><h2>Runbooks</h2><ul id="list"></ul></section>
-<article id="detail" hidden><h2 id="title"></h2><p id="body"></p></article></div>
-<section id="editing" hidden><h2 id="form-title">New runbook</h2>
-<form id="runbook-form">
-<label>Title <input name="title" required maxlength="255"></label>
-<label>Instructions <textarea name="body" rows="7" required maxlength="4000"></textarea></label>
-<button>Save runbook</button><button id="new" type="button">New runbook</button>
-<button id="delete" type="button" hidden>Delete selected runbook</button>
-</form></section>
-<section id="members" hidden>
-<h2>Workspace members</h2><ul id="member-list"></ul>
-<form id="member-form">
-<label>Account <input name="username" list="demo-users" required maxlength="40"></label>
-<datalist id="demo-users"><option value="editor"><option value="viewer"><option value="outsider"></datalist>
-<label>Access <select name="access"><option>VIEWER</option><option>EDITOR</option></select></label>
-<button>Save access</button>
-</form>
+<section id="library" hidden aria-label="Knowledge base">
+    <div id="public-intro" class="library-intro" hidden>
+        <strong>Example library</strong>
+        <p>Browse these example articles, or create an account to start a private workspace.</p>
+    </div>
+    <div id="workspace-tools" hidden>
+        <div class="library-toolbar">
+            <label id="demo-account">Local demo role
+                <select id="role"><option value="editor">Owner</option><option value="viewer">Viewer</option><option value="outsider">Other workspace owner</option></select>
+            </label>
+            <label id="workspace-picker" hidden>Workspace <select id="workspace"></select></label>
+            <details id="workspace-create">
+                <summary>Create workspace</summary>
+                <form id="workspace-form">
+                    <label>Workspace name
+                        <input name="slug" required maxlength="60" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="qa-handbook">
+                        <small>Use lowercase letters, numbers and hyphens.</small>
+                    </label>
+                    <button>Create workspace</button>
+                </form>
+            </details>
+        </div>
+    </div>
+    <p id="status" role="status"></p>
+    <div id="catalog" class="runbook-grid" hidden>
+        <section class="runbook-shelf" aria-labelledby="articles-heading">
+            <h2 id="articles-heading">Articles</h2>
+            <form id="article-search">
+                <label>Search articles <input id="search" type="search" placeholder="Search titles and instructions" maxlength="255"></label>
+                <button type="submit" class="secondary">Search</button>
+            </form>
+            <p id="result-count" aria-live="polite"></p>
+            <ul id="list"></ul>
+            <button id="new" type="button" hidden>New article</button>
+        </section>
+        <div>
+            <p id="empty-article" class="empty-article"></p>
+            <article id="detail" hidden>
+                <h2 id="title"></h2><p id="body"></p>
+                <button id="edit" type="button" hidden>Edit article</button>
+            </article>
+            <section id="editing" hidden>
+                <h2 id="form-title">New article</h2>
+                <form id="runbook-form">
+                    <label>Title <input name="title" required maxlength="255"></label>
+                    <label>Instructions <textarea name="body" rows="9" required maxlength="4000"></textarea></label>
+                    <div class="article-actions">
+                        <button>Save article</button>
+                        <button id="cancel" type="button" class="secondary">Cancel</button>
+                        <button id="delete" type="button" class="secondary" hidden>Delete article</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+    <details id="members" hidden>
+        <summary>Workspace members</summary>
+        <ul id="member-list"></ul>
+        <form id="member-form">
+            <label>Registered username <input name="username" list="demo-users" required maxlength="40"></label>
+            <datalist id="demo-users"><option value="editor"><option value="viewer"><option value="outsider"></datalist>
+            <label>Access <select name="access"><option value="VIEWER">Can view</option><option value="EDITOR">Can edit</option></select></label>
+            <button>Save access</button>
+        </form>
+    </details>
+    <dialog id="delete-dialog" aria-labelledby="delete-title">
+        <h2 id="delete-title">Delete article?</h2>
+        <p id="delete-description"></p>
+        <form method="dialog" class="article-actions">
+            <button class="secondary" value="cancel" autofocus>Keep article</button>
+            <button value="delete">Delete article</button>
+        </form>
+    </dialog>
 </section>
-</section>
-</main><script src="/account.js"></script><script src="/demo.js"></script></body></html>
+</main><script src="/account.js" defer></script><script src="/demo.js" defer></script></body></html>

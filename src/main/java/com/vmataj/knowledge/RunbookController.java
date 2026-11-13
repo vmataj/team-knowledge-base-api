@@ -24,9 +24,13 @@ class RunbookController {
     }
 
     @GetMapping
-    List<RunbookView> list(@PathVariable String workspace, Authentication user) {
+    List<RunbookView> list(@PathVariable String workspace, @RequestParam(defaultValue = "") String q,
+                           Authentication user) {
         authorize(workspace, user, false);
-        return repository.findByWorkspaceOrderById(workspace).stream().map(RunbookView::from).toList();
+        String term = q.strip();
+        List<Runbook> matches = term.isEmpty() ? repository.findByWorkspaceOrderById(workspace)
+            : repository.search(workspace, term);
+        return matches.stream().map(RunbookView::from).toList();
     }
 
     @GetMapping("/{id}")
